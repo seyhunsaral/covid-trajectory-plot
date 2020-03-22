@@ -20,18 +20,19 @@ mutate(country = ifelse(country == "United States", "US", country)) #renaming us
 
 
 cases  <- cases  %>%
-  # Summing the province level data 
+  # Province seviyesindeki veriyi ulke seviyesine toplamak icin
   select(-c("Province/State","Lat","Long"))  %>%  
   group_by(`Country/Region`)  %>%
   summarise_all(sum)  %>%
   rename(country = `Country/Region`)  %>%
   pivot_longer(-country, names_to = "date", values_to = "cases")  %>%
-  mutate(date = mdy(date))  %>%
-  filter(cases >= 100)
+  mutate(date = mdy(date))  
 
+# 100. vakadan itibaren olan gunleri hesaplamak icin
 cases100  <- cases  %>% group_by(country)  %>% summarize( first_100th = min(date))
 
-max_cases  <- cases  %>% group_by(country)  %>% summarize( max_case  = max(cases))  %>% filter(max_case >= 160)
+# 160 vakadan cok gorulen ulkeleri dahil etmek icin
+max_cases  <- cases  %>% group_by(country)  %>% summarize( max_case  = max(cases))  %>% filter(max_case >= 160) 
 
 
 df_final  <- cases  %>%
@@ -39,24 +40,22 @@ df_final  <- cases  %>%
   left_join(cases100, by = c("country"))  %>%
   mutate(days_since = date - first_100th)  %>%
   left_join(pops, by = c("country"))  %>%
-  mutate(case_per_hundth = 1000000 *  cases / population)  %>%
+  mutate(case_per_million = 1000000 *  cases / population)  %>%
   filter(population > 1000000)  %>%
-  mutate(country_dm = country)
+  mutate(country_dm = country) # asagida acikladigim trick icin
 
 df_final  %>%
   ggplot() +
-  geom_line(data = df_final[,-1], aes(y=case_per_hundth, x = days_since, fill = country_dm),color = "gray") +
-  geom_line(aes(y=case_per_hundth, x = days_since), color = "red", size = 1.2) +
+  # Burada bir trick uyguladim. Gri cizgiler "facet" icine girmesin diye, country degiskenini almadim. fill estetigi aynisi olan country_dm degiskenini kullaniyor.
+  geom_line(data = df_final[,-1], aes(y=case_per_million, x = days_since, fill = country_dm),color = "gray") +
+  # esas kirmizi cizgili grafik burada
+  geom_line(aes(y=case_per_million, x = days_since), color = "red", size = 1.2) +
   guides(color=FALSE) +
   facet_wrap(~country) +
   scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
               labels = trans_format("log10", math_format(10^.x))) +
   scale_x_continuous(breaks = seq(0,60,10)) +
   xlab("100. vakanin gorulmesinden itibaren gecen gun sayisi")  +
-  ylab("Vaka sayisi") +
+  ylab("Vaka sayisi / nufus    (her 1 milyonda gorulme sayisi)") +
   theme_bw()
 
-
-
-
-    
