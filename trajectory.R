@@ -96,6 +96,8 @@ df_plot2  %>%
     panel.grid.minor = ggplot2::element_blank(),
     strip.background = element_blank(),
     strip.text = element_text(colour = '#BB0000', size = 10,hjust = 0)
-    )
+    ) +
+  labs(title="COVID-19 Cases per one million inhabitants", subtitle="created by @seyhunsaral. \nInspired by @jburnmurdoch's plot https://www.ft.com/coronavirus-latest.\nEducation purposes only. Not associated with FT or any other institution.")
+
   ggsave("plot2.png", height = 10, width = 12) 
 
